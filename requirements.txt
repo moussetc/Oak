@@ -1,0 +1,2 @@
+aiohttp>=2.1,<2.3
+discord.py>=0.16.12
