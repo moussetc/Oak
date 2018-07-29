@@ -12,12 +12,47 @@ class OakClient(discord.Client):
             return
         if not message.content.startswith('<@421668164959731712>'):
             return
-        try:
-            await self.assign_channel(message)
+        if message.author.top_role.name not in ['admin', 'Modo']:
             return
+        try:
+            command = message.content.strip('\n').split()[1]
+            if command == 'hello':
+                await self.say_hello(message)
+            elif command == 'clean':
+                await self.clean_role(message)
+            return
+
+        #    await self.assign_channel(message)
+        #    return
         except:
             print('Unexpected error')
             raise
+
+    async def say_hello(self, message):
+        channel = message.channel
+        await self.send_message(channel, 'Hello trainer !')
+        return
+
+    async def clean_role(self, message):
+        await self.change_presence(status='idle')
+        try:
+            role_str = message.content.strip('\n').split()[2]
+            for r in message.server.roles:
+                if r.mention == role_str:
+                    role = r
+                    break
+            for member in message.server.members:
+                try:
+                    await self.remove_roles(member, role)
+                except discord.HTTPException:
+                    print('Unable to remove role for {}'.format(member))
+                    pass
+            await self.send_message(message.channel, 'Cleaned {}'.format(role))
+            await self.change_presence(status='online')
+        except IndexError:
+            await self.change_presence(status=online)
+            raise
+        return
 
     async def assign_channel(self, message):
         content = message.content.strip('<@421668164959731712>').strip()
