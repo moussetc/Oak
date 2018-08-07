@@ -13,6 +13,8 @@ class OakClient(discord.Client):
         if not message.content.startswith('<@421668164959731712>'):
             return
         if message.author.top_role.name not in ['admin', 'Modo']:
+            channel = message.channel
+            await self.send_message(channel, "You can't use that here !")
             return
         try:
             command = message.content.strip('\n').split()[1]
