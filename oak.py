@@ -53,7 +53,7 @@ class OakClient(discord.Client):
             'poste un screenshot de ton perso IG dans {1}'
             ' et pense à bien **lire le {2} et les messages épinglés** !'
             '\n----------\n'
-            'Welcome on Pokémon Go Grenoble\'s discord server, '
+            'Welcome to Pokémon Go Grenoble\'s discord server, '
             'please send a screenshot of your IG avatar in {1}'
             ' and **read both {2} and the pinned messages** !'
         )
