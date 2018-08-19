@@ -5,6 +5,7 @@ import discord
 
 class OakClient(discord.Client):
     async def on_ready(self):
+        await self.change_status(game=discord.Game(name='Pokedex'))
         print('Logged in as {}:{}'.format(self.user.name, self.user.id))
 
     async def on_message(self, message):
