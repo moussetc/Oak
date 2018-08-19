@@ -25,15 +25,41 @@ class OakClient(discord.Client):
                 await self.clean_role(message)
             return
 
-        #    await self.assign_channel(message)
-        #    return
         except:
             print('Unexpected error')
             raise
 
+    async def on_member_join(self, member):
+        await self.welcome(member)
+        return
+
     async def say_hello(self, message):
         channel = message.channel
         await self.send_message(channel, 'Hello trainer !')
+        return
+
+    async def welcome(self, member):
+        channel = None
+        rules = None
+        for c in self.get_all_channels():
+            if int(c.id) == 283349483670994945:
+                channel = c
+            elif int(c.id) == 343308060661645313:
+                rules = c
+
+        welcome = (
+            'Hello {0} !\n'
+            'Bienvenue sur le discord de Pokémon Go Grenoble, '
+            'poste un screenshot de ton perso IG dans {1}'
+            ' et pense à bien **lire le {2} et les messages épinglés** !'
+            '\n----------\n'
+            'Welcome on Pokémon Go Grenoble\'s discord server, '
+            'please send a screenshot of your IG avatar in {1}'
+            ' and **read both {2} and the pinned messages** !'
+        )
+
+        await self.send_message(channel,
+            welcome.format(member.mention, channel.mention, rules.mention))
         return
 
     async def clean_role(self, message):
