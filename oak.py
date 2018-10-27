@@ -2,16 +2,34 @@
 
 import discord
 
+roles_sectors = {
+    502397614155890689, # Eaux claires
+    502406042664304650, # Échirolles
+    504671470170013701, # Far Ouest
+    502397321393471498, # Gières
+    502394765351059458, # La Tronche
+    502405781396652042, # Meylan
+    502409361792958477, # Seyssins
+}
+
+
+def build_roles(roles):
+    role_match = {}
+    for r in roles:
+        if int(r.id) in roles_sectors:
+            role_match[r.name.lower()] = r
+    return role_match
+
 
 class OakClient(discord.Client):
     async def on_ready(self):
-        await self.change_status(game=discord.Game(name='Pokedex'))
+        for s in self.servers:
+            self.sectors = build_roles(s.roles)
+        await self.change_presence(game=discord.Game(name='Pokedex'))
         print('Logged in as {}:{}'.format(self.user.name, self.user.id))
 
     async def on_message(self, message):
         if not self.user in message.mentions:
-            return
-        if not message.content.startswith('<@421668164959731712>'):
             return
         if message.author.top_role.name not in ['admin', 'Modo']:
             channel = message.channel
@@ -23,6 +41,8 @@ class OakClient(discord.Client):
                 await self.say_hello(message)
             elif command == 'clean':
                 await self.clean_role(message)
+            elif command == 'join':
+                await self.add_sector(message)
             return
 
         except:
@@ -83,7 +103,19 @@ class OakClient(discord.Client):
             raise
         return
 
-    async def assign_channel(self, message):
+    async def add_sector(self, message):
+        try:
+            channel_str = message.content.strip('\n').split()[2]
+            channel_id = channel_str.replace('<#', '').replace('>', '')
+            sector = message.server.get_channel(channel_id)
+            role = self.sectors[sector.name.lower()]
+            await self.add_roles(message.author, role)
+            await self.add_reaction(message, u"\U0001F44B")
+        except IndexError:
+            raise
+        return
+
+    async def assign_sector(self, message):
         content = message.content.strip('<@421668164959731712>').strip()
         for r in message.server.roles:
             if content == r.name:
