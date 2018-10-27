@@ -12,6 +12,18 @@ roles_sectors = {
     502409361792958477, # Seyssins
 }
 
+raid_ex_channels = {
+    'raid-bobine',
+    'raid-colonne',
+    'raid-envol',
+    'raid-huitre',
+    'raid-lignes',
+    'raid-perret',
+    'raid-pompidou',
+    'raid-ours',
+    'raid-resistance',
+}
+
 
 def build_roles(roles):
     role_match = {}
@@ -28,19 +40,25 @@ class OakClient(discord.Client):
         await self.change_presence(game=discord.Game(name='Pokedex'))
         print('Logged in as {}:{}'.format(self.user.name, self.user.id))
 
-    async def on_message(self, message):
-        if not self.user in message.mentions:
-            return
+    async def check_author(self, message):
         if message.author.top_role.name not in ['admin', 'Modo']:
             channel = message.channel
             await self.send_message(channel, "You can't use that here !")
+            return False
+        else:
+            return True
+
+    async def on_message(self, message):
+        if not self.user in message.mentions:
             return
         try:
             command = message.content.strip('\n').split()[1]
             if command == 'hello':
                 await self.say_hello(message)
             elif command == 'clean':
-                await self.clean_role(message)
+                is_allowed = await self.check_author(message)
+                if is_allowed:
+                    await self.clean_role(message)
             elif command == 'join':
                 await self.add_sector(message)
             return
@@ -82,35 +100,47 @@ class OakClient(discord.Client):
             welcome.format(member.mention, channel.mention, rules.mention))
         return
 
+    async def recreate_role(self, message, role):
+        role_name = role.name
+        if role.name in raid_ex_channels:
+            server = message.server
+            channel = discord.utils.get(server.channels, name=role_name)
+            overwrite = channel.overwrites_for(role)
+            await self.delete_role(server, role)
+            role = await self.create_role(server, name=role_name, mentionable=True)
+            await self.edit_channel_permissions(channel, role, overwrite)
+            await self.add_reaction(message, u'\U0001F44C')
+        else:
+            return
+            
+
     async def clean_role(self, message):
-        await self.change_presence(status='idle')
-        try:
-            role_str = message.content.strip('\n').split()[2]
-            for r in message.server.roles:
-                if r.mention == role_str:
-                    role = r
-                    break
-            for member in message.server.members:
-                try:
-                    await self.remove_roles(member, role)
-                except discord.HTTPException:
-                    print('Unable to remove role for {}'.format(member))
-                    pass
-            await self.send_message(message.channel, 'Cleaned {}'.format(role))
-            await self.change_presence(status='online')
-        except IndexError:
-            await self.change_presence(status=online)
-            raise
-        return
+        role_str = message.content.strip('\n').split()[2]
+        role = None
+        for r in message.server.roles:
+            if r.mention == role_str:
+                role = r
+                break
+        if role is None:
+            await self.send_message(message.channel,
+                'Sorry I can\'t find {}'.format(role_str))
+            return
+        await self.recreate_role(message, role)
 
     async def add_sector(self, message):
         try:
             channel_str = message.content.strip('\n').split()[2]
-            channel_id = channel_str.replace('<#', '').replace('>', '')
-            sector = message.server.get_channel(channel_id)
-            role = self.sectors[sector.name.lower()]
-            await self.add_roles(message.author, role)
-            await self.add_reaction(message, u"\U0001F44B")
+            channel_name = channel_str.replace('#', '')
+            if channel_name not in self.sectors.keys():
+                await self.send_message(message.channel,
+                    'Sorry there is no {} sector'.format(channel_str))
+            else:
+                role = self.sectors[channel_name.lower()]
+                await self.add_roles(message.author, role)
+                await self.add_reaction(message, u"\U0001F44B")
+                channel = discord.utils.get(message.server.channels, name=channel_name)
+                await self.send_message(channel,
+                    'Welcome here {}'.format(message.author.mention) + u'\U0001F44B')
         except IndexError:
             raise
         return
