@@ -1,28 +1,9 @@
 #!/usr/bin/env python3
 
 import discord
-
-roles_sectors = {
-    502397614155890689, # Eaux claires
-    502406042664304650, # Échirolles
-    504671470170013701, # Far Ouest
-    502397321393471498, # Gières
-    502394765351059458, # La Tronche
-    502405781396652042, # Meylan
-    502409361792958477, # Seyssins
-}
-
-raid_ex_channels = {
-    'raid-bobine',
-    'raid-colonne',
-    'raid-envol',
-    'raid-huitre',
-    'raid-lignes',
-    'raid-perret',
-    'raid-pompidou',
-    'raid-ours',
-    'raid-resistance',
-}
+import db
+from text_recognition import detect_text, find_fields
+from config import roles_sectors, raid_ex_channels, raid_channel
 
 
 def build_roles(roles):
@@ -49,7 +30,10 @@ class OakClient(discord.Client):
             return True
 
     async def on_message(self, message):
-        if not self.user in message.mentions:
+        if int(message.channel.id) == raid_channel:
+            await self.add_raid(message)
+            return
+        elif not self.user in message.mentions:
             return
         try:
             command = message.content.strip('\n').split()[1]
@@ -66,6 +50,33 @@ class OakClient(discord.Client):
         except:
             print('Unexpected error')
             raise
+
+    async def add_raid(self, message):
+        if message.attachments == []:
+            return
+        image_url = message.attachments[0]['proxy_url']
+        raid_description = detect_text(image_url)
+        res = find_fields(raid_description)
+        missing_infos = []
+        if res['boss'] is None:
+            missing_infos.append('raid boss')
+        if res['gym'] is None:
+            missing_infos.append('gym name')
+        if res['time'] is None:
+            missing_infos.append('end time')
+        if missing_infos != []:
+            await self.send_message(message.channel,
+                    "Sorry I wasn't able to read {}.".format(', '.join(missing_infos)))
+        else:
+            try:
+                db.add_raid(res['boss'], res['gym'], res['time'])
+                await self.send_message(message.channel,
+                "Adding {} raid on {} ending in {}".format(
+                    res['boss'], res['gym'], res['time']))
+            except:
+                await self.send_message(message.channel,
+                "Something went wrong adding {} on {} ending in {}".format(
+                    res['boss'], res['gym'], res['time']))
 
     async def on_member_join(self, member):
         await self.welcome(member)
