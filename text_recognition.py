@@ -49,6 +49,13 @@ def find_fields(elements):
     return {'boss': boss, 'time': time, 'gym': gym}
 
 
+def find_pokestop(elements):
+    for e in elements:
+        if e in db.all_pokestops:
+            return e
+    return False
+
+
 def main():
     import argparse
     parser = argparse.ArgumentParser(description='Process text recognition')

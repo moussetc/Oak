@@ -823,7 +823,7 @@ RAID = defaultdict(lambda: '?', {
     382: 5,
     383: 5,
     384: 5,
-    487: 5,
+    487: 5
 })
 
 if language == 'EN':

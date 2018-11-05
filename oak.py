@@ -2,8 +2,8 @@
 
 import discord
 import db
-from text_recognition import detect_text, find_fields
-from config import roles_sectors, raid_ex_channels, raid_channel
+from text_recognition import detect_text, find_fields, find_pokestop
+from config import roles_sectors, raid_ex_channels, raid_channel, quest_channel
 
 
 def build_roles(roles):
@@ -33,6 +33,9 @@ class OakClient(discord.Client):
         if int(message.channel.id) == raid_channel:
             await self.add_raid(message)
             return
+        elif int(message.channel.id) == quest_channel:
+            await self.add_quest(message)
+            return
         elif not self.user in message.mentions:
             return
         try:
@@ -56,7 +59,9 @@ class OakClient(discord.Client):
             return
         image_url = message.attachments[0]['proxy_url']
         raid_description = detect_text(image_url)
+        print(raid_description)
         res = find_fields(raid_description)
+        print(res)
         missing_infos = []
         if res['boss'] is None:
             missing_infos.append('raid boss')
@@ -77,6 +82,19 @@ class OakClient(discord.Client):
                 await self.send_message(message.channel,
                 "Something went wrong adding {} on {} ending in {}".format(
                     res['boss'], res['gym'], res['time']))
+
+    async def add_quest(self, message):
+        if message.attachments == []:
+            return
+        image_url = message.attachments[0]['proxy_url']
+        quest_pokestop = detect_text(image_url)
+        pokestop = find_pokestop(quest_pokestop)
+        pokemon = message.content.lower()
+        print(pokestop, pokemon)
+        if not pokestop:
+            await self.send_message(message.channel, "Sorry I didn't find any matching pokéstop")
+            return
+        db.add_quest(pokestop, pokemon)
 
     async def on_member_join(self, member):
         await self.welcome(member)
