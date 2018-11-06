@@ -3,8 +3,7 @@
 import discord
 import db
 from text_recognition import detect_text, find_fields, find_pokestop
-from config import roles_sectors, raid_ex_channels, raid_channel, quest_channel
-
+from config import roles_sectors, raid_ex_channels, raid_channel, quest_channel, general_channel, rules_channel
 
 def build_roles(roles):
     role_match = {}
@@ -109,9 +108,9 @@ class OakClient(discord.Client):
         channel = None
         rules = None
         for c in self.get_all_channels():
-            if int(c.id) == 283349483670994945:
+            if int(c.id) == general_channel:
                 channel = c
-            elif int(c.id) == 343308060661645313:
+            elif int(c.id) == rules_channel:
                 rules = c
 
         welcome = (

@@ -18,5 +18,7 @@ raid_ex_channels = {
     'raid-bacon',
 }
 
+general_channel = 42424242242424242
+rules_channel = 434343434343434343
 raid_channel = 504307932324764852
 quest_channel = 445222271314785492 
