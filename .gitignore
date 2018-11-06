@@ -1,0 +1,6 @@
+config.py
+token
+*.log
+*.log.*
+__pycache__
+
