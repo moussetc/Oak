@@ -89,8 +89,8 @@ class OakClient(discord.Client):
             except Exception as ex:
                 await self.send_message(message.channel,
                 "Something went wrong adding {} on {} ending in {}".format(
-                logger.error("add_raid failed to add raid to db:%s", str(ex))
                     res['boss'], res['gym'], res['time']))
+                logger.error("add_raid failed to add raid to db:%s", str(ex))
 
     async def add_quest(self, message):
         logger.debug("add_quest request")
@@ -105,8 +105,10 @@ class OakClient(discord.Client):
             logger.debug("Add quest for %s at %s", pokemon, pokestop)
             if not pokestop:
                 await self.send_message(message.channel, "Sorry I didn't find any matching pokéstop")
+                logger.info("No pokestop found, so we're not doing anything.")
                 return
             db.add_quest(pokestop, pokemon)
+            await self.add_reaction(message, u'\u2705')
         except Exception as ex:
             logger.error("add_quest failed:%s", str(ex))
 
