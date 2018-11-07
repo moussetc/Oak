@@ -3,8 +3,17 @@
 import discord
 import db
 from text_recognition import detect_text, find_fields, find_pokestop
-from config import roles_sectors, raid_ex_channels, raid_channel, quest_channel
+from config import roles_sectors, raid_ex_channels, raid_channel, quest_channel, general_channel, rules_channel
+import logging
+from logging.handlers import TimedRotatingFileHandler
 
+# Log to file, rotate everyday, delete old ones
+handler = TimedRotatingFileHandler('bot_oak.log', when='midnight', backupCount=5)
+formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
+handler.setFormatter(formatter)
+logger = logging.getLogger(__name__)
+logger.addHandler(handler)
+logger.setLevel(logging.DEBUG)
 
 def build_roles(roles):
     role_match = {}
@@ -19,7 +28,7 @@ class OakClient(discord.Client):
         for s in self.servers:
             self.sectors = build_roles(s.roles)
         await self.change_presence(game=discord.Game(name='Pokedex'))
-        print('Logged in as {}:{}'.format(self.user.name, self.user.id))
+        logger.info('Logged in as %s:%s', self.user.name, self.user.id)
 
     async def check_author(self, message):
         if message.author.top_role.name not in ['admin', 'Modo']:
@@ -49,19 +58,18 @@ class OakClient(discord.Client):
             elif command == 'join':
                 await self.add_sector(message)
             return
-
-        except:
-            print('Unexpected error')
+        except Exception as ex:
+            logger.error('on_message failed: %s', str(ex))
             raise
 
     async def add_raid(self, message):
+        logger.debug("add_raid request")
         if message.attachments == []:
             return
         image_url = message.attachments[0]['proxy_url']
         raid_description = detect_text(image_url)
-        print(raid_description)
         res = find_fields(raid_description)
-        print(res)
+        logger.debug("add_raid: detected raid description=%s | res=%s", raid_description, res)
         missing_infos = []
         if res['boss'] is None:
             missing_infos.append('raid boss')
@@ -78,23 +86,29 @@ class OakClient(discord.Client):
                 await self.send_message(message.channel,
                 "Adding {} raid on {} ending in {}".format(
                     res['boss'], res['gym'], res['time']))
-            except:
+            except Exception as ex:
                 await self.send_message(message.channel,
                 "Something went wrong adding {} on {} ending in {}".format(
+                logger.error("add_raid failed to add raid to db:%s", str(ex))
                     res['boss'], res['gym'], res['time']))
 
     async def add_quest(self, message):
+        logger.debug("add_quest request")
         if message.attachments == []:
+            logger.debug("Can't add quest without image attachment")
             return
-        image_url = message.attachments[0]['proxy_url']
-        quest_pokestop = detect_text(image_url)
-        pokestop = find_pokestop(quest_pokestop)
-        pokemon = message.content.lower()
-        print(pokestop, pokemon)
-        if not pokestop:
-            await self.send_message(message.channel, "Sorry I didn't find any matching pokéstop")
-            return
-        db.add_quest(pokestop, pokemon)
+        try:
+            image_url = message.attachments[0]['proxy_url']
+            quest_pokestop = detect_text(image_url)
+            pokestop = find_pokestop(quest_pokestop)
+            pokemon = message.content.lower()
+            logger.debug("Add quest for %s at %s", pokemon, pokestop)
+            if not pokestop:
+                await self.send_message(message.channel, "Sorry I didn't find any matching pokéstop")
+                return
+            db.add_quest(pokestop, pokemon)
+        except Exception as ex:
+            logger.error("add_quest failed:%s", str(ex))
 
     async def on_member_join(self, member):
         await self.welcome(member)
@@ -109,9 +123,9 @@ class OakClient(discord.Client):
         channel = None
         rules = None
         for c in self.get_all_channels():
-            if int(c.id) == 283349483670994945:
+            if int(c.id) == general_channel:
                 channel = c
-            elif int(c.id) == 343308060661645313:
+            elif int(c.id) == rules_channel:
                 rules = c
 
         welcome = (
@@ -222,7 +236,8 @@ def main():
             oak.run(tok.strip())
     except (KeyboardInterrupt, SystemExit):
         oak.close()
-
+    except Exception as ex:
+        logger.error("Could not start Oak bot:%s", str(ex))
 
 if __name__ == '__main__':
     main()
