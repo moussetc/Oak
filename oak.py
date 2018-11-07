@@ -3,7 +3,7 @@
 import discord
 import db
 from text_recognition import detect_text, find_fields, find_pokestop
-from config import roles_sectors, raid_ex_channels, raid_channel, quest_channel, general_channel, rules_channel
+from config import roles_sectors, raid_ex_channels, raid_channel, quest_channel, assignment_channel, rules_channel
 import logging
 from logging.handlers import TimedRotatingFileHandler
 
@@ -123,7 +123,7 @@ class OakClient(discord.Client):
         channel = None
         rules = None
         for c in self.get_all_channels():
-            if int(c.id) == general_channel:
+            if int(c.id) == assignment_channel:
                 channel = c
             elif int(c.id) == rules_channel:
                 rules = c
