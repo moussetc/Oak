@@ -3,7 +3,7 @@
 import discord
 import db
 from text_recognition import detect_text, find_fields, find_pokestop
-from config import roles_sectors, raid_ex_channels, raid_channel, quest_channel, assignment_channel, rules_channel
+from config import roles_admin, roles_sectors, raid_ex_channels, raid_channel, quest_channel, assignment_channel, rules_channel
 from utils import logger
 
 def build_roles(roles):
@@ -22,7 +22,7 @@ class OakClient(discord.Client):
         logger.info('Logged in as %s:%s', self.user.name, self.user.id)
 
     async def check_author(self, message):
-        if message.author.top_role.name not in ['admin', 'Modo']:
+        if message.author.top_role.name not in roles_admin:
             channel = message.channel
             await self.send_message(channel, "You can't use that here !")
             return False
