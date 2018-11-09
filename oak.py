@@ -4,16 +4,7 @@ import discord
 import db
 from text_recognition import detect_text, find_fields, find_pokestop
 from config import roles_sectors, raid_ex_channels, raid_channel, quest_channel, assignment_channel, rules_channel
-import logging
-from logging.handlers import TimedRotatingFileHandler
-
-# Log to file, rotate everyday, delete old ones
-handler = TimedRotatingFileHandler('bot_oak.log', when='midnight', backupCount=5)
-formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
-handler.setFormatter(formatter)
-logger = logging.getLogger(__name__)
-logger.addHandler(handler)
-logger.setLevel(logging.DEBUG)
+from utils import logger
 
 def build_roles(roles):
     role_match = {}
@@ -105,7 +96,7 @@ class OakClient(discord.Client):
             logger.debug("Add quest for %s at %s", pokemon, pokestop)
             if not pokestop:
                 await self.send_message(message.channel, "Sorry I didn't find any matching pokéstop")
-                logger.info("No pokestop found, so we're not doing anything.")
+                logger.debug("No pokestop found, so we're not doing anything.")
                 return
             db.add_quest(pokestop, pokemon)
             await self.add_reaction(message, u'\u2705')

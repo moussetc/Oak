@@ -1,6 +1,7 @@
 import MySQLdb
 from config import host, user, password, database
 from names import POKEMON, RAID
+from utils import logger
 import datetime, calendar
 
 database = MySQLdb.connect(host,user,password,database)
@@ -37,6 +38,8 @@ def get_pokemon_id(pokemon):
 def add_raid(boss, gym, end):
     pokemon_id = get_pokemon_id(boss)
     level = RAID[pokemon_id]
+    if level is None:
+        logger.error("No raid level found")
 
     cursor.execute("select id from forts where name like '%" + str(gym) + "%'")
     res = cursor.fetchall()
@@ -48,10 +51,11 @@ def add_raid(boss, gym, end):
     query = ("insert into raids ("
             "id, external_id, fort_id, level, pokemon_id, "
             "move_1, move_2, time_spawn, time_battle, time_end)"
-            "values "
+            " values "
             "(null, null, " + str(gym_id) + ", " + str(level) + ", "
             + str(pokemon_id) + ", null, null, null, null, "
             + str(time) + ");")
+    logger.debug("Executing query in add_raid \n {}".format(query))
     cursor.execute(query)
     database.commit()
 
@@ -67,10 +71,10 @@ def add_quest(pokestop, pokemon):
 
     query = ("insert into quests ("
             "id, fort_id, pokemon_id, date)"
-            "values "
+            " values "
             "(null, " + str(pokestop_id) + ", " + str(pokemon_id) + ", "
             + str(date) + ");")
-    print(query)
+    logger.debug("Executing query in add_quest \n {}".format(query))
     cursor.execute(query)
     database.commit()
 
