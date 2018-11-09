@@ -29,6 +29,9 @@ class OakClient(discord.Client):
         else:
             return True
 
+    async def on_message_edit(self, before, after):
+        await self.on_message(after)
+
     async def on_message(self, message):
         if int(message.channel.id) == raid_channel:
             await self.add_raid(message)
