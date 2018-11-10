@@ -35,6 +35,9 @@ class OakClient(discord.Client):
         await self.on_message(after)
 
     async def on_message(self, message):
+        # Ignore messages written by the bot
+        if int(message.author.id) == int(self.user.id):
+            return
         if int(message.channel.id) == raid_channel:
             await self.add_raid(message)
             return
