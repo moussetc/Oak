@@ -91,10 +91,13 @@ class OakClient(discord.Client):
                     res['boss'], res['gym'], res['time']))
                 logger.error("add_raid failed to add raid to db:%s", str(ex))
 
-    async def add_quest(self, message):
+    async def add_quest(self, message : discord.Message):
         logger.debug("add_quest request")
         if message.attachments == []:
             logger.debug("Can't add quest without image attachment")
+            return
+        if not message.content:
+            logger.debug("Can't add quest without pokemon name")
             return
         try:
             pokemon = find_pokemon(message.content)
