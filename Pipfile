@@ -9,6 +9,8 @@ google-cloud = ">=0.34.0"
 google-cloud-vision = ">=0.34.0"
 "discord.py" = ">=0.16.12"
 grpcio = "*"
+fuzzywuzzy = "==0.8.0"
+python-levenshtein = "*"
 
 [dev-packages]
 

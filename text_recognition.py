@@ -6,7 +6,7 @@ import db
 
 from google.cloud import vision
 from google.cloud.vision import types
-
+from fuzzywuzzy import process
 
 time_pattern = re.compile('[0-9]+:[0-9]+:[0-9]+')
 
@@ -50,10 +50,19 @@ def find_fields(elements):
 
 
 def find_pokestop(elements):
+    """
+    Try to find the name of a pokestop that sort of matches one of the input strings in elements.
+    """
     for e in elements:
+        # First, try to find exact match
         if e in db.all_pokestops:
             return e
-    return False
+        else:
+            # Then, try to find a close match 
+            match = process.extractOne(e, db.all_pokestops, score_cutoff=80)
+            if match is not None:
+                return match[0]
+    return None
 
 
 def main():
