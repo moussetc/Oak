@@ -1,8 +1,10 @@
 #!/usr/bin/env python3
 
 import discord
+from typing import List
+
 import db
-from text_recognition import detect_text, find_fields, find_pokestop
+from text_recognition import detect_text, find_raid_fields, find_pokestop, find_pokemon
 from config import roles_admin, roles_sectors, raid_ex_channels, raid_channel, quest_channel, assignment_channel, rules_channel
 from utils import logger
 
@@ -62,7 +64,7 @@ class OakClient(discord.Client):
             return
         image_url = message.attachments[0]['proxy_url']
         raid_description = detect_text(image_url)
-        res = find_fields(raid_description)
+        res = find_raid_fields(raid_description)
         logger.debug("add_raid: detected raid description=%s | res=%s", raid_description, res)
         missing_infos = []
         if res['boss'] is None:
@@ -92,19 +94,22 @@ class OakClient(discord.Client):
             logger.debug("Can't add quest without image attachment")
             return
         try:
+            pokemon = find_pokemon(message.content)
+            if pokemon is None:
+                logger.debug('No matching pokemon found, do nothing')
+                return
             image_url = message.attachments[0]['proxy_url']
             quest_pokestop = detect_text(image_url)
             pokestop = find_pokestop(quest_pokestop)
-            pokemon = message.content.lower()
             logger.debug("Add quest for %s at %s", pokemon, pokestop)
             if not pokestop:
-                await self.send_message(message.channel, "Sorry I didn't find any matching pokéstop")
+                await self.send_message(message.channel, "Sorry I didn't find any matching pokestop")
                 logger.debug("No pokestop found, so we're not doing anything.")
                 return
             db.add_quest(pokestop, pokemon)
             await self.add_reaction(message, u'\u2705')
-        except Exception as ex:
-            logger.error("add_quest failed:%s", str(ex))
+        except Exception:
+            logger.exception("add_quest failed")
 
     async def on_member_join(self, member):
         await self.welcome(member)

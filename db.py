@@ -63,7 +63,8 @@ def add_raid(boss, gym, end):
 def add_quest(pokestop, pokemon):
     pokemon_id = get_pokemon_id(pokemon)
 
-    cursor.execute("select id from pokestops where name like '%" + str(pokestop) + "%'")
+    sql ="SELECT id FROM pokestops WHERE name = %s" 
+    cursor.execute(sql, (str(pokestop),))
     res = cursor.fetchall()
     pokestop_id = res[0][0]
 
