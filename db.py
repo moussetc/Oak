@@ -7,14 +7,12 @@ import datetime, calendar
 database = MySQLdb.connect(host,user,password,database)
 cursor = database.cursor()
 
-cursor.execute('select name from forts')
+cursor.execute('SELECT name FROM forts')
 res = cursor.fetchall()
-
 all_gyms = [i[0].strip() for i in res]
 
-cursor.execute('select name from pokestops')
+cursor.execute('SELECT name FROM pokestops')
 res = cursor.fetchall()
-
 all_pokestops = [i[0].strip() for i in res]
 
 
@@ -40,42 +38,34 @@ def add_raid(boss, gym, end):
     level = RAID[pokemon_id]
     if level is None:
         logger.error("No raid level found")
+        return
 
-    cursor.execute("select id from forts where name like '%" + str(gym) + "%'")
+    cursor.execute('SELECT id FROM forts WHERE name = %s', (gym,))
     res = cursor.fetchall()
     gym_id = res[0][0]
 
     remaining_minute = int(end.split(':')[1])
     time = get_end_time(remaining_minute)
 
-    query = ("insert into raids ("
-            "id, external_id, fort_id, level, pokemon_id, "
-            "move_1, move_2, time_spawn, time_battle, time_end)"
-            " values "
-            "(null, null, " + str(gym_id) + ", " + str(level) + ", "
-            + str(pokemon_id) + ", null, null, null, null, "
-            + str(time) + ");")
-    logger.debug("Executing query in add_raid \n {}".format(query))
-    cursor.execute(query)
+    query = 'INSERT INTO raids (fort_id, level, pokemon_id, time_end) VALUES (%s, %s, %s, %s)'
+    logger.debug('Executing query in add_raid \n {}'.format(query), gym_id, level, pokemon_id, time)
+    cursor.execute(query, (gym_id, level, pokemon_id, time,))
     database.commit()
 
 
 def add_quest(pokestop, pokemon):
     pokemon_id = get_pokemon_id(pokemon)
 
-    cursor.execute("select id from pokestops where name like '%" + str(pokestop) + "%'")
+    sql ='SELECT id FROM pokestops WHERE name = %s' 
+    cursor.execute(sql, (str(pokestop),))
     res = cursor.fetchall()
     pokestop_id = res[0][0]
 
     date = get_date()
 
-    query = ("insert into quests ("
-            "id, fort_id, pokemon_id, date)"
-            " values "
-            "(null, " + str(pokestop_id) + ", " + str(pokemon_id) + ", "
-            + str(date) + ");")
-    logger.debug("Executing query in add_quest \n {}".format(query))
-    cursor.execute(query)
+    query = 'INSERT INTO quests (fort_id, pokemon_id, date) VALUES (%s, %s, %s)'
+    logger.debug('Executing query in add_quest \n {}'.format(query), pokestop_id, pokemon_id, date)
+    cursor.execute(query, (pokestop_id, pokemon_id, date,))
     database.commit()
 
 
