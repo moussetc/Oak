@@ -4,6 +4,7 @@ import re
 from names import POKEMON
 import db
 from utils import logger
+from entities import Pokestop
 
 from typing import List, Optional
 from google.cloud import vision
@@ -71,14 +72,17 @@ def find_fuzzy(text: str, text_options: List[str], score_cutoff: int) -> Optiona
         return None
     
 
-def find_pokestop(elements: List[str])-> Optional[str]:
+def find_pokestop(elements: List[str])-> Optional[Pokestop]:
     """
     Return the name of the 1st pokestop that matches one of the input strings in elements.
     """
     for e in elements:
-        match = find_fuzzy(e, db.all_pokestops, 90)
+        match = find_fuzzy(e, list(db.all_pokestops.keys()), 90)
         if match is not None:
-            return match
+            pkstop = Pokestop()
+            pkstop.db_id = db.all_pokestops[match]
+            pkstop.name = match
+            return pkstop
     return None
 
 def find_pokemon(text: str)-> Optional[str]:

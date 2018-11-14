@@ -40,3 +40,6 @@ rules_channel = 434343434343434343
 raid_channel = 504307932324764852
 # Channel ID for quests submissions
 quest_channel = 445222271314785492 
+
+# Time allowed to cancel adding a raid or quest (seconds)
+cancel_time = 300 #5min

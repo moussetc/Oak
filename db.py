@@ -1,6 +1,7 @@
 import MySQLdb
 from config import host, user, password, database
 from names import POKEMON, RAID
+from entities import Pokestop
 from utils import logger
 import datetime, calendar
 
@@ -11,10 +12,10 @@ cursor.execute('SELECT name FROM forts')
 res = cursor.fetchall()
 all_gyms = [i[0].strip() for i in res]
 
-cursor.execute('SELECT name FROM pokestops')
+cursor.execute('SELECT id, name FROM pokestops')
 res = cursor.fetchall()
-all_pokestops = [i[0].strip() for i in res]
-
+# Index ID by name (used for text search)
+all_pokestops = {i[1].strip():str(i[0]) for i in res}
 
 def get_end_time(time):
     future = datetime.datetime.utcnow() + datetime.timedelta(minutes=time)
@@ -53,19 +54,19 @@ def add_raid(boss, gym, end):
     database.commit()
 
 
-def add_quest(pokestop, pokemon):
+def add_quest(pokestop: Pokestop, pokemon):
     pokemon_id = get_pokemon_id(pokemon)
-
-    sql ='SELECT id FROM pokestops WHERE name = %s' 
-    cursor.execute(sql, (str(pokestop),))
-    res = cursor.fetchall()
-    pokestop_id = res[0][0]
 
     date = get_date()
 
     query = 'INSERT INTO quests (fort_id, pokemon_id, date) VALUES (%s, %s, %s)'
-    logger.debug('Executing query in add_quest \n {}'.format(query), pokestop_id, pokemon_id, date)
-    cursor.execute(query, (pokestop_id, pokemon_id, date,))
+    logger.debug('Executing query in add_quest \n {}'.format(query), pokestop.db_id+'("'+pokestop.name+'")', pokemon_id, date)
+    cursor.execute(query, (pokestop.db_id, pokemon_id, date,))
     database.commit()
 
+def delete_quest(pokestop: Pokestop):
+    query = 'DELETE FROM quests WHERE fort_id = %s'
+    logger.debug('Executing query {}'.format(query), pokestop.db_id)
+    cursor.execute(query, (pokestop.db_id,))
+    database.commit()
 

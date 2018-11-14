@@ -5,7 +5,7 @@ from typing import List
 
 import db
 from text_recognition import detect_text, find_raid_fields, find_pokestop, find_pokemon
-from config import roles_admin, roles_sectors, raid_ex_channels, raid_channel, quest_channel, assignment_channel, rules_channel
+from config import roles_admin, roles_sectors, raid_ex_channels, raid_channel, quest_channel, assignment_channel, rules_channel, cancel_time
 from utils import logger
 
 def build_roles(roles):
@@ -107,13 +107,35 @@ class OakClient(discord.Client):
             image_url = message.attachments[0]['proxy_url']
             quest_pokestop = detect_text(image_url)
             pokestop = find_pokestop(quest_pokestop)
-            logger.debug("Add quest for %s at %s", pokemon, pokestop)
             if not pokestop:
                 await self.send_message(message.channel, "Sorry I didn't find any matching pokestop")
                 logger.debug("No pokestop found, so we're not doing anything.")
                 return
+            logger.debug("Add quest for %s at %s", pokemon, pokestop.name)
             db.add_quest(pokestop, pokemon)
-            await self.add_reaction(message, u'\u2705')
+            # Add possibility to cancel by adding a thumbsdon emoji
+            ok_emoji = '\N{WHITE HEAVY CHECK MARK}'
+            ko_emoji = '\N{THUMBS DOWN SIGN}'
+            question_emojis = [
+                    ok_emoji, 
+                    '\N{REGIONAL INDICATOR SYMBOL LETTER O}', 
+                    '\N{REGIONAL INDICATOR SYMBOL LETTER R}', 
+                    ko_emoji, 
+                    '\N{BLACK QUESTION MARK ORNAMENT}'
+                ]
+            for emoji in question_emojis:
+                await self.add_reaction(message, emoji)
+
+            res = await self.wait_for_reaction([ok_emoji, ko_emoji], message=message, user= message.author, timeout=cancel_time)
+            if res is not None and res.reaction is not None:
+                if res.reaction.emoji ==  ko_emoji:
+                    # Remove the quest (wrong user input, wrong text recognition...)
+                    logger.debug('Remove fresh quest on pokestop "%s" by user request', pokestop)
+                    db.delete_quest(pokestop)
+                # Quest was either approved or canceled, remove unecessary emojis
+                for emoji in question_emojis:
+                    await self.remove_reaction(message, emoji, message.server.me)
+            # Else : timeout, don't do anything special
         except Exception:
             logger.exception("add_quest failed")
 
